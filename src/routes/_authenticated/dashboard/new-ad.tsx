@@ -86,7 +86,7 @@ function NewAd() {
         contact_phone: d.contact_phone,
         location: d.location || null,
         plan,
-        status: "pending_payment",
+        status: "payment_pending",
         transaction_id: tran,
       })
       .select()
