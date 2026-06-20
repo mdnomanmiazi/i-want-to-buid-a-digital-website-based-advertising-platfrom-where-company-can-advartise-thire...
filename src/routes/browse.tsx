@@ -31,7 +31,7 @@ function BrowsePage() {
       let query = supabase
         .from("ads")
         .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
-        .eq("status", "active")
+        .eq("status", "approved")
         .order("created_at", { ascending: false });
       if (category) query = query.eq("category", category);
       const { data, error } = await query;

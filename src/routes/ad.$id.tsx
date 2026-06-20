@@ -41,7 +41,7 @@ function AdDetail() {
         .from("ads")
         .select("*, profiles:user_id(company_name, phone, website, logo_url)")
         .eq("id", id)
-        .eq("status", "active")
+        .eq("status", "approved")
         .maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();

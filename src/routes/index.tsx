@@ -27,7 +27,7 @@ function HomePage() {
       const { data, error } = await supabase
         .from("ads")
         .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
-        .eq("status", "active")
+        .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(8);
       if (error) throw error;
