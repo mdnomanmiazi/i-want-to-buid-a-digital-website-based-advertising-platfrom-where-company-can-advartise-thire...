@@ -19,9 +19,14 @@ export type Database = {
           ad_id: string | null
           amount: number
           created_at: string
+          currency: string
           gateway_response: Json | null
           id: string
+          paid_at: string | null
+          payment_method: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
           plan: Database["public"]["Enums"]["ad_plan"]
+          refund_status: Database["public"]["Enums"]["refund_status"]
           status: string
           tran_id: string
           updated_at: string
@@ -31,9 +36,14 @@ export type Database = {
           ad_id?: string | null
           amount: number
           created_at?: string
+          currency?: string
           gateway_response?: Json | null
           id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           plan: Database["public"]["Enums"]["ad_plan"]
+          refund_status?: Database["public"]["Enums"]["refund_status"]
           status?: string
           tran_id: string
           updated_at?: string
@@ -43,9 +53,14 @@ export type Database = {
           ad_id?: string | null
           amount?: number
           created_at?: string
+          currency?: string
           gateway_response?: Json | null
           id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           plan?: Database["public"]["Enums"]["ad_plan"]
+          refund_status?: Database["public"]["Enums"]["refund_status"]
           status?: string
           tran_id?: string
           updated_at?: string
@@ -57,6 +72,67 @@ export type Database = {
             columns: ["ad_id"]
             isOneToOne: false
             referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_actions: {
+        Row: {
+          action_type: string
+          ad_id: string | null
+          admin_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          notes: string | null
+          payment_id: string | null
+          refund_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          ad_id?: string | null
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_id?: string | null
+          refund_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          ad_id?: string | null
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          payment_id?: string | null
+          refund_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "ad_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_actions_refund_id_fkey"
+            columns: ["refund_id"]
+            isOneToOne: false
+            referencedRelation: "refunds"
             referencedColumns: ["id"]
           },
         ]
@@ -160,6 +236,66 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          ad_id: string | null
+          amount: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          initiated_by: string | null
+          payment_id: string
+          reason: string | null
+          status: Database["public"]["Enums"]["refund_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_id?: string | null
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          initiated_by?: string | null
+          payment_id: string
+          reason?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_id?: string | null
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          initiated_by?: string | null
+          payment_id?: string
+          reason?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "ad_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -197,12 +333,16 @@ export type Database = {
     Enums: {
       ad_plan: "single" | "monthly" | "yearly"
       ad_status:
-        | "pending_payment"
-        | "pending_review"
-        | "active"
+        | "draft"
+        | "payment_pending"
+        | "waiting_for_admin_approval"
+        | "approved"
         | "rejected"
+        | "refunded"
         | "expired"
       app_role: "admin" | "user"
+      payment_status: "pending" | "paid" | "failed" | "cancelled"
+      refund_status: "none" | "pending" | "completed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -332,13 +472,17 @@ export const Constants = {
     Enums: {
       ad_plan: ["single", "monthly", "yearly"],
       ad_status: [
-        "pending_payment",
-        "pending_review",
-        "active",
+        "draft",
+        "payment_pending",
+        "waiting_for_admin_approval",
+        "approved",
         "rejected",
+        "refunded",
         "expired",
       ],
       app_role: ["admin", "user"],
+      payment_status: ["pending", "paid", "failed", "cancelled"],
+      refund_status: ["none", "pending", "completed", "failed"],
     },
   },
 } as const
