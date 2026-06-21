@@ -15,7 +15,7 @@ export const lovable = {
 
       // Call Supabase directly
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: actualProvider,
+        provider: actualProvider as any,
         options: {
           // Use the provided redirect URI, or default to the current domain (your Coolify domain)
           redirectTo: opts?.redirect_uri || window.location.origin,
