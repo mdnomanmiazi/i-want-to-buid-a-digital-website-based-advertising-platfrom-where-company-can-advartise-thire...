@@ -5,17 +5,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# 2. Copy code
+# 2. Copy the rest of your application code
 COPY . .
 
-# 3. Tell Nitro to build for Node.js instead of Cloudflare
-ENV NITRO_PRESET=node-server
-
-# 4. Build the application
+# 3. BUILD THE APP (This creates the missing /dist/server/server.js file!)
 RUN npm run build
 
-# 5. Expose port
+# 4. Expose the port and start the preview server
 EXPOSE 3000 
-
-# 6. Run the compiled Nitro backend server
-CMD ["node", ".output/server/index.mjs"]
+CMD ["npm", "start"]
