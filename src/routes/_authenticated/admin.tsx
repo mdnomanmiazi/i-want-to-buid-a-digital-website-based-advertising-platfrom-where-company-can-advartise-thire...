@@ -53,11 +53,18 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ads")
-        .select("*, profiles:user_id(company_name, phone)")
+        .select("*")
         .eq("status", tab as "waiting_for_admin_approval" | "approved" | "rejected")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      const userIds = Array.from(new Set((data ?? []).map((a) => a.user_id).filter(Boolean)));
+      let profilesMap: Record<string, { company_name: string | null; phone: string | null }> = {};
+      if (userIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles").select("id, company_name, phone").in("id", userIds);
+        profilesMap = Object.fromEntries((profs ?? []).map((p) => [p.id, p]));
+      }
+      return (data ?? []).map((a) => ({ ...a, profiles: profilesMap[a.user_id] ?? null }));
     },
   });
 
@@ -67,10 +74,17 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("refunds")
-        .select("*, ads(title), profiles:user_id(company_name)")
+        .select("*, ads(title)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      const userIds = Array.from(new Set((data ?? []).map((r) => r.user_id).filter(Boolean)));
+      let profilesMap: Record<string, { company_name: string | null }> = {};
+      if (userIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles").select("id, company_name").in("id", userIds);
+        profilesMap = Object.fromEntries((profs ?? []).map((p) => [p.id, p]));
+      }
+      return (data ?? []).map((r) => ({ ...r, profiles: profilesMap[r.user_id] ?? null }));
     },
   });
 
