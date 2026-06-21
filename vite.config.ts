@@ -9,7 +9,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 export default defineConfig({
   vite: {
     preview: {
-      allowedHosts: ["qwnimrq6lkt3mzm1j9ll2wpp.ieltsai.net"],
+      allowedHosts: ["ads.ieltsai.net/"],
       // If you eventually attach a custom domain (like www.my-app.com), 
       // you can change the line above to: allowedHosts: true
     },
