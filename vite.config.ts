@@ -7,6 +7,13 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  vite: {
+    preview: {
+      allowedHosts: ["qwnimrq6lkt3mzm1j9ll2wpp.ieltsai.net"],
+      // If you eventually attach a custom domain (like www.my-app.com), 
+      // you can change the line above to: allowedHosts: true
+    },
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
