@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
   Plus, Eye, Clock, CheckCircle2, XCircle, Hourglass,
-  CreditCard, RotateCcw, FileText, ShieldAlert,
+  CreditCard, RotateCcw, FileText, ShieldAlert, Pencil,
 } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -159,6 +159,11 @@ function Dashboard() {
                         {ad.status === "approved" && (
                           <Button asChild variant="outline" size="sm">
                             <Link to="/ad/$id" params={{ id: ad.id }}><Eye className="h-4 w-4" /> View</Link>
+                          </Button>
+                        )}
+                        {["approved", "waiting_for_admin_approval", "rejected"].includes(ad.status) && (
+                          <Button asChild variant="outline" size="sm">
+                            <Link to="/dashboard/edit-ad/$id" params={{ id: ad.id }}><Pencil className="h-4 w-4" /> Edit</Link>
                           </Button>
                         )}
                       </div>
