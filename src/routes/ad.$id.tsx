@@ -39,13 +39,22 @@ function AdDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ads")
-        .select("*, profiles:user_id(company_name, phone, website, logo_url)")
+        .select("*")
         .eq("id", id)
         .eq("status", "approved")
         .maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();
-      return data;
+      let profile: any = null;
+      if (data.user_id) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("company_name, phone, website, logo_url")
+          .eq("id", data.user_id)
+          .maybeSingle();
+        profile = p;
+      }
+      return { ...data, profile };
     },
   });
 
@@ -58,7 +67,7 @@ function AdDetail() {
       ? Math.round(((Number(ad.original_price) - Number(ad.offer_price)) / Number(ad.original_price)) * 100)
       : null);
 
-  const profile = (ad as any).profiles as { company_name: string; phone: string | null; website: string | null } | null;
+  const profile = (ad as any).profile as { company_name: string; phone: string | null; website: string | null } | null;
 
   return (
     <div className="min-h-screen">
