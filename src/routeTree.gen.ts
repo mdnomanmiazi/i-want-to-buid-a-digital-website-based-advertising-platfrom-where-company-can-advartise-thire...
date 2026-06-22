@@ -24,6 +24,7 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard/profile'
 import { Route as AuthenticatedDashboardPaymentResultRouteImport } from './routes/_authenticated/dashboard/payment-result'
 import { Route as AuthenticatedDashboardNewAdRouteImport } from './routes/_authenticated/dashboard/new-ad'
+import { Route as AuthenticatedDashboardEditAdIdRouteImport } from './routes/_authenticated/dashboard/edit-ad.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -103,6 +104,12 @@ const AuthenticatedDashboardNewAdRoute =
     path: '/dashboard/new-ad',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDashboardEditAdIdRoute =
+  AuthenticatedDashboardEditAdIdRouteImport.update({
+    id: '/dashboard/edit-ad/$id',
+    path: '/dashboard/edit-ad/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/edit-ad/$id': typeof AuthenticatedDashboardEditAdIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -135,6 +143,7 @@ export interface FileRoutesByTo {
   '/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/edit-ad/$id': typeof AuthenticatedDashboardEditAdIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -153,6 +162,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/edit-ad/$id': typeof AuthenticatedDashboardEditAdIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/dashboard/payment-result'
     | '/dashboard/profile'
     | '/dashboard/'
+    | '/dashboard/edit-ad/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/dashboard/payment-result'
     | '/dashboard/profile'
     | '/dashboard'
+    | '/dashboard/edit-ad/$id'
   id:
     | '__root__'
     | '/'
@@ -204,6 +216,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/payment-result'
     | '/_authenticated/dashboard/profile'
     | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/edit-ad/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -326,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardNewAdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard/edit-ad/$id': {
+      id: '/_authenticated/dashboard/edit-ad/$id'
+      path: '/dashboard/edit-ad/$id'
+      fullPath: '/dashboard/edit-ad/$id'
+      preLoaderRoute: typeof AuthenticatedDashboardEditAdIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -335,6 +355,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardPaymentResultRoute: typeof AuthenticatedDashboardPaymentResultRoute
   AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedDashboardEditAdIdRoute: typeof AuthenticatedDashboardEditAdIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -344,6 +365,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedDashboardPaymentResultRoute,
   AuthenticatedDashboardProfileRoute: AuthenticatedDashboardProfileRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+  AuthenticatedDashboardEditAdIdRoute: AuthenticatedDashboardEditAdIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
