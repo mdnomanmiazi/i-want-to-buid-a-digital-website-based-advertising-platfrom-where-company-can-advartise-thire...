@@ -1,16 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus, Eye, Clock, CheckCircle2, XCircle, Hourglass,
-  CreditCard, RotateCcw, FileText, ShieldAlert, Pencil,
+  CreditCard, RotateCcw, FileText, ShieldAlert, Pencil, Trash2, RefreshCw, Archive,
 } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { formatBDT } from "@/lib/plans";
+import { formatBDT, PLANS, type PlanId } from "@/lib/plans";
+import { generateTransactionId, initiatePayment } from "@/lib/payment";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   component: Dashboard,
@@ -40,9 +46,24 @@ const REFUND_META: Record<string, string> = {
   failed: "bg-red-100 text-red-900",
 };
 
+function isArchived(ad: any): boolean {
+  if (ad.status === "expired" || ad.status === "refunded") return true;
+  if (ad.status === "approved" && ad.expires_at && new Date(ad.expires_at).getTime() <= Date.now()) return true;
+  return false;
+}
+
+function daysRemaining(expires_at: string | null): number | null {
+  if (!expires_at) return null;
+  const ms = new Date(expires_at).getTime() - Date.now();
+  if (ms <= 0) return 0;
+  return Math.ceil(ms / 86400000);
+}
+
 function Dashboard() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [tab, setTab] = useState<"active" | "archive">("active");
+  const [renewingId, setRenewingId] = useState<string | null>(null);
 
   const adsQ = useQuery({
     queryKey: ["my-ads", user?.id],
@@ -86,7 +107,7 @@ function Dashboard() {
     },
   });
 
-  // Realtime subscriptions
+  // Realtime
   useEffect(() => {
     if (!user?.id) return;
     const ch = supabase
@@ -105,9 +126,77 @@ function Dashboard() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, qc]);
 
-  const ads = adsQ.data ?? [];
+  const allAds = adsQ.data ?? [];
+  const { activeAds, archivedAds } = useMemo(() => {
+    const active: any[] = [];
+    const archived: any[] = [];
+    for (const ad of allAds) (isArchived(ad) ? archived : active).push(ad);
+    return { activeAds: active, archivedAds: archived };
+  }, [allAds]);
   const payments = paymentsQ.data ?? [];
   const refunds = refundsQ.data ?? [];
+
+  async function handleDelete(adId: string) {
+    const { error } = await supabase.from("ads").delete().eq("id", adId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Ad deleted");
+    qc.invalidateQueries({ queryKey: ["my-ads"] });
+  }
+
+  async function handleRenew(ad: any) {
+    if (!user) return;
+    setRenewingId(ad.id);
+    try {
+      const plan = (ad.plan as PlanId) ?? "single";
+      const amount = PLANS[plan].price;
+      const tran = generateTransactionId();
+
+      const { error: payErr } = await supabase.from("ad_payments").insert({
+        ad_id: ad.id,
+        user_id: user.id,
+        tran_id: tran,
+        amount,
+        plan,
+        status: "initiated",
+      });
+      if (payErr) throw new Error(payErr.message);
+
+      // Mark ad as awaiting payment so it won't be shown live
+      await supabase
+        .from("ads")
+        .update({ status: "payment_pending", transaction_id: tran })
+        .eq("id", ad.id);
+
+      // Fetch profile for customer info
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company_name, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      localStorage.setItem("lastTransactionId", tran);
+
+      const result = await initiatePayment(
+        [{ name: `AYNA Renewal — ${PLANS[plan].name}`, price: amount, description: ad.title }],
+        {
+          name: profile?.company_name ?? user.email ?? "Customer",
+          email: user.email ?? "",
+          phone: profile?.phone ?? ad.contact_phone ?? "",
+        },
+        tran,
+      );
+      if (result.success && result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+      } else {
+        throw new Error(result.error ?? "Payment failed to start");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Renewal failed");
+      setRenewingId(null);
+    }
+  }
+
+  const list = tab === "active" ? activeAds : archivedAds;
 
   return (
     <div className="min-h-screen">
@@ -121,21 +210,48 @@ function Dashboard() {
           <Button asChild><Link to="/dashboard/new-ad"><Plus className="h-4 w-4" /> Post a new offer</Link></Button>
         </div>
 
-        {/* Ads */}
+        {/* Ads with tabs */}
         <section className="mt-8">
-          <h2 className="font-display text-2xl font-bold">My ads</h2>
+          <div className="flex items-center gap-2 border-b border-border">
+            <button
+              onClick={() => setTab("active")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === "active" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              Active ads ({activeAds.length})
+            </button>
+            <button
+              onClick={() => setTab("archive")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-1 ${tab === "archive" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              <Archive className="h-4 w-4" /> Archive ({archivedAds.length})
+            </button>
+          </div>
+
           <div className="mt-4">
-            {ads.length === 0 ? (
+            {list.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
-                <p className="font-display text-xl font-semibold">No ads yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">Create your first offer and reach thousands of shoppers.</p>
-                <Button asChild className="mt-4"><Link to="/dashboard/new-ad">Post your first offer</Link></Button>
+                <p className="font-display text-xl font-semibold">
+                  {tab === "active" ? "No active ads" : "No archived ads"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {tab === "active"
+                    ? "Create your first offer and reach thousands of shoppers."
+                    : "Expired ads will appear here. You can renew them anytime."}
+                </p>
+                {tab === "active" && (
+                  <Button asChild className="mt-4"><Link to="/dashboard/new-ad">Post an offer</Link></Button>
+                )}
               </div>
             ) : (
               <div className="grid gap-4">
-                {ads.map((ad) => {
-                  const meta = STATUS_META[ad.status] ?? STATUS_META.draft;
+                {list.map((ad) => {
+                  const archived = isArchived(ad);
+                  const displayStatus = archived && ad.status === "approved" ? "expired" : ad.status;
+                  const meta = STATUS_META[displayStatus] ?? STATUS_META.draft;
                   const Icon = meta.icon;
+                  const days = ad.status === "approved" && !archived ? daysRemaining(ad.expires_at) : null;
+                  const canEdit = ["approved", "waiting_for_admin_approval", "rejected"].includes(ad.status) && !archived;
+
                   return (
                     <div key={ad.id} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-center">
                       <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
@@ -147,25 +263,61 @@ function Dashboard() {
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${meta.cls}`}>
                             <Icon className="h-3 w-3" /> {meta.label}
                           </span>
+                          {days !== null && (
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${days <= 3 ? "bg-amber-100 text-amber-900" : "bg-muted text-muted-foreground"}`}>
+                              <Clock className="h-3 w-3" /> {days} day{days === 1 ? "" : "s"} left
+                            </span>
+                          )}
                         </div>
-                        <p className="mt-1 text-sm text-muted-foreground">{ad.category} · {formatBDT(Number(ad.offer_price))} · {ad.plan}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {ad.category} · {formatBDT(Number(ad.offer_price))} · {ad.plan}
+                        </p>
                         {ad.rejection_reason && (
                           <p className="mt-1 text-xs text-destructive flex items-center gap-1">
                             <ShieldAlert className="h-3 w-3" /> {ad.rejection_reason}
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        {ad.status === "approved" && (
+                      <div className="flex flex-wrap gap-2">
+                        {ad.status === "approved" && !archived && (
                           <Button asChild variant="outline" size="sm">
                             <Link to="/ad/$id" params={{ id: ad.id }}><Eye className="h-4 w-4" /> View</Link>
                           </Button>
                         )}
-                        {["approved", "waiting_for_admin_approval", "rejected"].includes(ad.status) && (
+                        {canEdit && (
                           <Button asChild variant="outline" size="sm">
                             <Link to="/dashboard/edit-ad/$id" params={{ id: ad.id }}><Pencil className="h-4 w-4" /> Edit</Link>
                           </Button>
                         )}
+                        {archived && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleRenew(ad)}
+                            disabled={renewingId === ad.id}
+                          >
+                            <RefreshCw className={`h-4 w-4 ${renewingId === ad.id ? "animate-spin" : ""}`} />
+                            {renewingId === ad.id ? "Starting..." : "Renew ad"}
+                          </Button>
+                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this ad?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                "{ad.title}" will be permanently removed. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(ad.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   );
