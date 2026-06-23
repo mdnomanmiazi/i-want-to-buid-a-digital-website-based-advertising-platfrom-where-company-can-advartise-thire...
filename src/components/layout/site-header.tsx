@@ -179,9 +179,8 @@ export function SiteHeader() {
               <UserIcon className="h-5 w-5" />
             </Link>
           )}
-          {/* keep button import lint happy */}
-          <span className="hidden"><Button /></span>
         </div>
+
       </div>
     </header>
   );
