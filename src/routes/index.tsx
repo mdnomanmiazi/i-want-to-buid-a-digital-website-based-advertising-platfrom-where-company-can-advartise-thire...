@@ -1,174 +1,306 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgePercent, Megaphone, Sparkles, Target, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { AdCard, type AdCardData } from "@/components/ad-card";
 import { supabase } from "@/integrations/supabase/client";
-import { CATEGORIES, PLAN_LIST, formatBDT } from "@/lib/plans";
+import { CATEGORIES, formatBDT } from "@/lib/plans";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AYNA — Bangladesh's Vibrant Deal Marketplace" },
-      { name: "description", content: "Discover exclusive offers from top brands. Companies advertise their best deals — shoppers save big." },
-      { property: "og:title", content: "AYNA — Bangladesh's Vibrant Deal Marketplace" },
-      { property: "og:description", content: "Discover exclusive offers from top brands across Bangladesh." },
+      { title: "AYNA — A Curated Marketplace for Bold Offers" },
+      { name: "description", content: "An editorial marketplace of standout offers from leading brands. Discover, compare, and shop the season's most talked-about deals." },
+      { property: "og:title", content: "AYNA — A Curated Marketplace for Bold Offers" },
+      { property: "og:description", content: "An editorial marketplace of standout offers from leading brands." },
     ],
   }),
   component: HomePage,
 });
 
+interface AdRow {
+  id: string;
+  title: string;
+  category: string;
+  original_price: number | null;
+  offer_price: number;
+  discount_percent: number | null;
+  image_url: string | null;
+  location: string | null;
+  plan: string;
+}
+
+const HERO_VIDEO = "https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4";
+const HERO_POSTER = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80";
+const FEATURE_LIFESTYLE = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=85";
+const FEATURE_PRODUCT = "https://images.unsplash.com/photo-1591348278863-a8fb3887e2aa?auto=format&fit=crop&w=900&q=85";
+
+const PAGE_SIZE = 12;
+
 function HomePage() {
-  const { data: featured } = useQuery({
-    queryKey: ["featured-ads"],
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+
+  // Top "shelf" — first 8 ads for the category grid section
+  const { data: shelf } = useQuery({
+    queryKey: ["home-shelf", activeCategory],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("ads")
         .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(8);
+      if (activeCategory !== "All") q = q.eq("category", activeCategory);
+      const { data, error } = await q;
       if (error) throw error;
-      return data as AdCardData[];
+      return data as AdRow[];
     },
   });
 
+  // Infinite feed
+  const feed = useInfiniteQuery({
+    queryKey: ["home-feed"],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const from = (pageParam as number) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from("ads")
+        .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (error) throw error;
+      return { rows: (data ?? []) as AdRow[], next: data && data.length === PAGE_SIZE ? (pageParam as number) + 1 : null };
+    },
+    getNextPageParam: (last) => last.next,
+  });
+
+  const feedRows = useMemo(() => feed.data?.pages.flatMap((p) => p.rows) ?? [], [feed.data]);
+
+  // Intersection observer for infinite scroll
+  const sentinel = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && feed.hasNextPage && !feed.isFetchingNextPage) {
+          feed.fetchNextPage();
+        }
+      },
+      { rootMargin: "600px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [feed]);
+
+  const tabs = ["All", ...CATEGORIES];
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:py-24">
-          <div>
-            <span className="deal-chip mb-5"><Sparkles className="h-3 w-3" /> Bangladesh's #1 offer marketplace</span>
-            <h1 className="font-display text-5xl font-bold leading-[1.05] sm:text-6xl">
-              Where brands shout <span className="text-primary">their best price</span> — and shoppers listen.
-            </h1>
-            <p className="mt-5 max-w-xl text-lg text-muted-foreground">
-              Post your offer in minutes. Reach thousands of bargain-hungry buyers across Dhaka and beyond. Pay once, get seen.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="shadow-pop">
-                <Link to="/dashboard/new-ad">
-                  <Megaphone className="h-5 w-5" /> Post an offer
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/browse">Browse offers <ArrowRight className="h-4 w-4" /></Link>
-              </Button>
-            </div>
-            <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
-              <div><strong className="text-foreground">From {formatBDT(500)}</strong> · single ad</div>
-              <div className="h-4 w-px bg-border" />
-              <div><strong className="text-foreground">No setup fees</strong></div>
-            </div>
-          </div>
+      {/* ===================== HERO ===================== */}
+      <section className="relative h-screen w-full overflow-hidden">
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster={HERO_POSTER}
+        >
+          <source src={HERO_VIDEO} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center text-white">
+          <p className="mb-6 text-xs font-medium uppercase tracking-[0.5em] text-white/70">A curated marketplace</p>
+          <h1 className="font-display text-5xl font-light leading-[1.05] tracking-tight sm:text-6xl md:text-7xl lg:text-[88px]">
+            The season's most<br />talked-about offers.
+          </h1>
+          <p className="mt-8 max-w-xl text-base text-white/80 sm:text-lg">
+            Editorial deals from the brands shaping how Bangladesh shops, eats, travels and lives.
+          </p>
+          <Link
+            to="/browse"
+            className="mt-10 inline-flex items-center gap-3 border border-white px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-black"
+          >
+            Discover offers
+          </Link>
+        </div>
+      </section>
 
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-primary/20 via-accent/20 to-transparent blur-2xl" />
-            <div className="relative grid grid-cols-2 gap-4">
-              {[
-                { tag: "−40%", title: "Iftar Buffet", price: "৳699", color: "bg-primary text-primary-foreground" },
-                { tag: "−25%", title: "Smart TV 43\"", price: "৳29,990", color: "bg-ink text-ink-foreground" },
-                { tag: "BOGO", title: "Spa Day", price: "৳1,500", color: "bg-deal text-deal-foreground" },
-                { tag: "−15%", title: "Cox's Bazar Stay", price: "৳4,200", color: "bg-accent text-accent-foreground" },
-              ].map((c, i) => (
-                <div
-                  key={i}
-                  className={`rounded-2xl p-5 shadow-pop ${i % 2 === 0 ? "translate-y-4" : ""} ${c.color}`}
+      {/* ===================== CATEGORY TOGGLE + GRID ===================== */}
+      <section className="bg-white">
+        <div className="flex justify-center px-4 pb-8 pt-20">
+          <div className="flex max-w-full gap-2 overflow-x-auto scrollbar-none">
+            {tabs.map((t) => {
+              const active = activeCategory === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActiveCategory(t)}
+                  className={`whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-medium uppercase tracking-[0.2em] transition ${
+                    active
+                      ? "bg-black text-white"
+                      : "border border-border text-foreground/70 hover:border-foreground hover:text-foreground"
+                  }`}
                 >
-                  <p className="text-xs font-bold uppercase tracking-wider opacity-80">Offer</p>
-                  <p className="mt-2 text-2xl font-bold font-display">{c.tag}</p>
-                  <p className="mt-1 text-sm opacity-90">{c.title}</p>
-                  <p className="mt-3 text-lg font-bold">{c.price}</p>
-                </div>
-              ))}
-            </div>
+                  {t}
+                </button>
+              );
+            })}
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {(shelf ?? Array.from({ length: 8 })).map((ad, i) => (
+            <AdTile key={(ad as AdRow)?.id ?? `s-${i}`} ad={ad as AdRow | undefined} />
+          ))}
         </div>
       </section>
 
-      {/* CATEGORIES */}
-      <section className="container-page py-12">
-        <h2 className="mb-6 font-display text-2xl font-bold">Browse by category</h2>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+      {/* ===================== SPLIT FEATURE ===================== */}
+      <section className="grid grid-cols-1 md:grid-cols-2">
+        <div className="relative aspect-[3/4] md:aspect-auto md:min-h-[720px]">
+          <img
+            src={FEATURE_LIFESTYLE}
+            alt="Featured editorial collection"
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <div className="flex items-center justify-center bg-[#f7f5f1] px-8 py-24 md:px-16">
+          <div className="flex w-full max-w-md flex-col items-center text-center">
+            <div className="aspect-square w-56 overflow-hidden bg-white sm:w-64">
+              <img src={FEATURE_PRODUCT} alt="The Atelier collection" className="h-full w-full object-cover" loading="lazy" />
+            </div>
+            <p className="mt-12 text-[10px] font-medium uppercase tracking-[0.4em] text-foreground/60">The Atelier Collection</p>
+            <h2 className="mt-5 font-display text-4xl font-light leading-[1.1] tracking-tight sm:text-5xl">
+              Quietly bold,<br />distinctly yours.
+            </h2>
+            <p className="mt-6 max-w-sm text-sm leading-relaxed text-foreground/70">
+              A featured spotlight from a brand we love this month — handpicked offers worth your attention.
+            </p>
             <Link
-              key={c}
               to="/browse"
-              className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary"
+              className="mt-10 inline-flex items-center gap-2 border border-black px-10 py-4 text-xs font-medium uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white"
             >
-              {c}
+              Shop now <ArrowRight className="h-3 w-3" />
             </Link>
-          ))}
+          </div>
         </div>
       </section>
 
-      {/* FEATURED */}
-      <section className="container-page py-12">
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <h2 className="font-display text-3xl font-bold">🔥 Hottest offers right now</h2>
-            <p className="text-muted-foreground">Fresh deals from verified brands</p>
-          </div>
-          <Button asChild variant="ghost"><Link to="/browse">See all <ArrowRight className="h-4 w-4" /></Link></Button>
+      {/* ===================== MORE TO LOVE ===================== */}
+      <section className="bg-white px-4 py-24 sm:px-6">
+        <div className="mb-16 text-center">
+          <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.4em] text-foreground/60">An endless feed</p>
+          <h2 className="font-display text-4xl font-light tracking-tight sm:text-5xl md:text-6xl">More to love</h2>
         </div>
-        {featured && featured.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((ad) => <AdCard key={ad.id} ad={ad} />)}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
-            <p className="font-display text-lg font-semibold">No live offers yet</p>
-            <p className="text-sm text-muted-foreground">Be the first to post — your offer will land on the front page.</p>
-            <Button asChild className="mt-4"><Link to="/dashboard/new-ad">Post the first offer</Link></Button>
-          </div>
+
+        <div className="grid grid-cols-2 gap-1 sm:gap-1.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+          {feedRows.map((ad) => (
+            <FeedTile key={ad.id} ad={ad} />
+          ))}
+          {(feed.isFetching || feed.isFetchingNextPage) &&
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={`sk-${i}`} className="aspect-[3/4] animate-pulse bg-muted" />
+            ))}
+        </div>
+
+        <div ref={sentinel} className="h-10" />
+
+        {!feed.hasNextPage && feedRows.length > 0 && (
+          <p className="mt-12 text-center text-xs uppercase tracking-[0.3em] text-foreground/50">You're all caught up</p>
         )}
-      </section>
-
-      {/* WHY */}
-      <section className="container-page py-16">
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { icon: Target, title: "Hyper-targeted", text: "Shoppers come here specifically looking for offers. Higher intent, better conversion." },
-            { icon: Zap, title: "Live in minutes", text: "Post your ad, pay securely, get reviewed fast, and go live the same day." },
-            { icon: BadgePercent, title: "Transparent pricing", text: "No hidden fees. Pay per ad or unlock unlimited posting with monthly/yearly plans." },
-          ].map(({ icon: Icon, title, text }) => (
-            <div key={title} className="rounded-2xl border border-border bg-card p-6">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span>
-              <h3 className="mt-4 font-display text-xl font-bold">{title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground">{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* PRICING TEASER */}
-      <section className="container-page py-12">
-        <div className="rounded-3xl bg-ink p-10 text-ink-foreground shadow-deal">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <div>
-              <h2 className="font-display text-3xl font-bold">Simple, honest pricing</h2>
-              <p className="mt-2 text-ink-foreground/70">Start at {formatBDT(500)} for a single ad. Scale up when you're ready.</p>
-              <Button asChild size="lg" className="mt-6"><Link to="/pricing">See plans <ArrowRight className="h-4 w-4" /></Link></Button>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {PLAN_LIST.map((p) => (
-                <div key={p.id} className={`rounded-2xl border p-4 ${p.highlight ? "border-primary bg-primary text-primary-foreground" : "border-ink-foreground/15"}`}>
-                  <p className="text-xs uppercase tracking-wider opacity-70">{p.name}</p>
-                  <p className="mt-2 font-display text-2xl font-bold">{formatBDT(p.price)}</p>
-                  <p className="mt-1 text-xs opacity-80">{p.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {!feed.isFetching && feedRows.length === 0 && (
+          <p className="mt-12 text-center text-sm text-foreground/60">No offers live yet — check back soon.</p>
+        )}
       </section>
 
       <SiteFooter />
     </div>
+  );
+}
+
+function AdTile({ ad }: { ad?: AdRow }) {
+  if (!ad) return <div className="aspect-square animate-pulse bg-muted" />;
+  const discount =
+    ad.discount_percent ??
+    (ad.original_price && ad.original_price > ad.offer_price
+      ? Math.round(((ad.original_price - ad.offer_price) / ad.original_price) * 100)
+      : null);
+  return (
+    <Link
+      to="/ad/$id"
+      params={{ id: ad.id }}
+      className="group relative block aspect-square overflow-hidden bg-muted"
+    >
+      {ad.image_url ? (
+        <img
+          src={ad.image_url}
+          alt={ad.title}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+        />
+      ) : (
+        <div className="grid h-full w-full place-items-center bg-gradient-to-br from-foreground/5 to-foreground/10 text-foreground/40">
+          <span className="font-display text-2xl">AYNA</span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="absolute inset-x-0 bottom-0 translate-y-2 p-5 text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-white/70">{ad.category}</p>
+        <h3 className="mt-1 line-clamp-2 font-display text-lg">{ad.title}</h3>
+        <p className="mt-1 text-sm">{formatBDT(ad.offer_price)}</p>
+      </div>
+      {discount !== null && discount > 0 && (
+        <span className="absolute left-3 top-3 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-black">
+          −{discount}%
+        </span>
+      )}
+    </Link>
+  );
+}
+
+function FeedTile({ ad }: { ad: AdRow }) {
+  const discount =
+    ad.discount_percent ??
+    (ad.original_price && ad.original_price > ad.offer_price
+      ? Math.round(((ad.original_price - ad.offer_price) / ad.original_price) * 100)
+      : null);
+  return (
+    <Link
+      to="/ad/$id"
+      params={{ id: ad.id }}
+      className="group block"
+    >
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        {ad.image_url ? (
+          <img
+            src={ad.image_url}
+            alt={ad.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-foreground/5 to-foreground/10 text-foreground/40">
+            <span className="font-display">AYNA</span>
+          </div>
+        )}
+        {discount !== null && discount > 0 && (
+          <span className="absolute left-2 top-2 bg-black px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+            −{discount}%
+          </span>
+        )}
+      </div>
+      <div className="px-1 py-2">
+        <h3 className="line-clamp-1 text-xs font-medium tracking-tight text-foreground">{ad.title}</h3>
+        <p className="mt-0.5 text-xs text-foreground/70">{formatBDT(ad.offer_price)}</p>
+      </div>
+    </Link>
   );
 }
