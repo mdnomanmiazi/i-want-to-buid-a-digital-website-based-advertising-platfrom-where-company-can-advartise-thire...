@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { LogOut, Menu, Search, ShieldCheck, User as UserIcon, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import { useAuth, useIsAdmin } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
