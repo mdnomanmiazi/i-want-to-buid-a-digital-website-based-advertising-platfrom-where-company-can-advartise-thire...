@@ -163,6 +163,9 @@ function HomePage() {
       {/* ===================== EDITORIAL VIDEO CAROUSEL ===================== */}
       <EditorialCarousel />
 
+      {/* ===================== INTEREST EDIT (Women / Men) ===================== */}
+      <InterestEdit />
+
       {/* ===================== CATEGORY TOGGLE + GRID ===================== */}
       <section className="bg-white">
         <div className="flex justify-center px-4 pb-8 pt-20">
