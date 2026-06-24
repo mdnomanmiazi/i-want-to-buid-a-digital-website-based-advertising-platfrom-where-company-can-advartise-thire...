@@ -78,7 +78,6 @@ function NewAd() {
       category: fd.get("category"),
       original_price: fd.get("original_price") ? Number(fd.get("original_price")) : undefined,
       offer_price: Number(fd.get("offer_price")),
-      image_url: fd.get("image_url") || "",
       link_url: fd.get("link_url") || "",
       contact_phone: fd.get("contact_phone"),
       location: fd.get("location") || undefined,
@@ -88,8 +87,37 @@ function NewAd() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (files.length === 0) {
+      toast.error("Please upload at least one image");
+      return;
+    }
     setSubmitting(true);
     const d = parsed.data;
+
+    // Upload images
+    const uploadedUrls: string[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("ad-images").upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
+        if (upErr) throw upErr;
+        const { data: signed, error: signErr } = await supabase.storage
+          .from("ad-images")
+          .createSignedUrl(path, SIGNED_URL_TTL);
+        if (signErr || !signed) throw signErr ?? new Error("Failed to sign URL");
+        uploadedUrls.push(signed.signedUrl);
+      }
+    } catch (err) {
+      setSubmitting(false);
+      toast.error(err instanceof Error ? err.message : "Image upload failed");
+      return;
+    }
 
     const discount = d.original_price && d.original_price > d.offer_price
       ? Math.round(((d.original_price - d.offer_price) / d.original_price) * 100)
@@ -107,7 +135,8 @@ function NewAd() {
         original_price: d.original_price ?? null,
         offer_price: d.offer_price,
         discount_percent: discount,
-        image_url: d.image_url || null,
+        image_url: uploadedUrls[0],
+        image_urls: uploadedUrls,
         link_url: d.link_url || null,
         contact_phone: d.contact_phone,
         location: d.location || null,
@@ -118,6 +147,7 @@ function NewAd() {
       .select()
       .single();
     if (adErr || !ad) { setSubmitting(false); toast.error(adErr?.message ?? "Failed to create ad"); return; }
+
 
     // Update profile company_name if blank
     await supabase.from("profiles").update({ company_name: d.company_name, phone: d.contact_phone }).eq("id", user.id);
