@@ -203,7 +203,48 @@ function NewAd() {
               <div><Label>Location</Label><Input name="location" placeholder="Dhaka" /></div>
               <div><Label>Original price (BDT)</Label><Input name="original_price" type="number" min="0" step="1" /></div>
               <div><Label>Offer price (BDT)*</Label><Input name="offer_price" type="number" min="1" step="1" required /></div>
-              <div className="sm:col-span-2"><Label>Image URL</Label><Input name="image_url" type="url" placeholder="https://..." /></div>
+              <div className="sm:col-span-2">
+                <Label>Offer images* <span className="text-xs font-normal text-muted-foreground">(up to {MAX_IMAGES})</span></Label>
+                <label
+                  htmlFor="ad-image-upload"
+                  className="mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-6 py-8 text-center transition hover:border-primary hover:bg-muted/50"
+                >
+                  <Upload className="h-6 w-6 text-muted-foreground" />
+                  <div className="text-sm">
+                    <span className="font-medium text-foreground">Click to upload</span>{" "}
+                    <span className="text-muted-foreground">or drag images here</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, WEBP — up to {MAX_IMAGES} files</p>
+                  <input
+                    id="ad-image-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
+                  />
+                </label>
+                {previews.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {previews.map((src, i) => (
+                      <div key={src} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+                        <img src={src} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeAt(i)}
+                          className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                          aria-label="Remove image"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">Cover</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="sm:col-span-2"><Label>Offer link (optional)</Label><Input name="link_url" type="url" placeholder="https://yourbrand.com/offer" /></div>
               <div><Label>Contact phone*</Label><Input name="contact_phone" required placeholder="+8801..." /></div>
               <div><Label>Company name*</Label><Input name="company_name" required placeholder="Your brand" /></div>
