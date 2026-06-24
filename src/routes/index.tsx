@@ -1,11 +1,39 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, formatBDT } from "@/lib/plans";
+
+const EDITORIAL_SLIDES = [
+  {
+    kicker: "The Digital Edit",
+    title: "Days of Summer",
+    cta: "For Her",
+    href: "/browse",
+    video: "https://videos.pexels.com/video-files/4434242/4434242-uhd_2560_1440_30fps.mp4",
+    poster: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1920&q=80",
+  },
+  {
+    kicker: "New Arrivals",
+    title: "Modern Essentials",
+    cta: "Shop Now",
+    href: "/browse",
+    video: "https://videos.pexels.com/video-files/3024269/3024269-uhd_2560_1440_24fps.mp4",
+    poster: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1920&q=80",
+  },
+  {
+    kicker: "Featured Brands",
+    title: "Crafted with Care",
+    cta: "Discover",
+    href: "/browse",
+    video: "https://videos.pexels.com/video-files/4763824/4763824-uhd_2560_1440_25fps.mp4",
+    poster: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1920&q=80",
+  },
+];
+const SLIDE_DURATION = 6000;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -132,6 +160,9 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ===================== EDITORIAL VIDEO CAROUSEL ===================== */}
+      <EditorialCarousel />
+
       {/* ===================== CATEGORY TOGGLE + GRID ===================== */}
       <section className="bg-white">
         <div className="flex justify-center px-4 pb-8 pt-20">
@@ -223,6 +254,114 @@ function HomePage() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+function EditorialCarousel() {
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const total = EDITORIAL_SLIDES.length;
+
+  useEffect(() => {
+    if (!playing) return;
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min(elapsed / SLIDE_DURATION, 1);
+      setProgress(pct);
+      if (pct >= 1) {
+        setIndex((i) => (i + 1) % total);
+      }
+    }, 50);
+    return () => clearInterval(tick);
+  }, [index, playing, total]);
+
+  const go = (next: number) => {
+    setIndex(((next % total) + total) % total);
+    setProgress(0);
+  };
+
+  return (
+    <section className="relative h-screen w-full overflow-hidden bg-black">
+      {EDITORIAL_SLIDES.map((s, i) => (
+        <div
+          key={s.title}
+          className={`absolute inset-0 transition-opacity duration-700 ${i === index ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        >
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster={s.poster}
+          >
+            <source src={s.video} type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/20" />
+        </div>
+      ))}
+
+      {/* Content */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-end px-6 pb-32 text-center text-white">
+        <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.4em] text-white/80">
+          {EDITORIAL_SLIDES[index].kicker}
+        </p>
+        <h2 className="font-display text-5xl font-light leading-[1.05] tracking-tight sm:text-6xl md:text-7xl">
+          {EDITORIAL_SLIDES[index].title}
+        </h2>
+        <Link
+          to={EDITORIAL_SLIDES[index].href}
+          className="mt-8 inline-block border-b border-white pb-1 text-xs font-medium uppercase tracking-[0.35em] text-white transition hover:opacity-70"
+        >
+          {EDITORIAL_SLIDES[index].cta}
+        </Link>
+      </div>
+
+      {/* Bottom control bar */}
+      <div className="absolute inset-x-0 bottom-8 z-20 flex items-center justify-center gap-4 px-6">
+        <div className="flex flex-1 max-w-xl items-center gap-3">
+          {EDITORIAL_SLIDES.map((_, i) => {
+            const fill = i < index ? 1 : i === index ? progress : 0;
+            return (
+              <button
+                key={i}
+                onClick={() => go(i)}
+                className="group relative h-px flex-1 bg-white/30"
+                aria-label={`Slide ${i + 1}`}
+              >
+                <span
+                  className="absolute inset-y-0 left-0 bg-white transition-[width] duration-100 ease-linear"
+                  style={{ width: `${fill * 100}%` }}
+                />
+              </button>
+            );
+          })}
+          <button
+            onClick={() => go(index + 1)}
+            className="ml-2 text-white/80 transition hover:text-white"
+            aria-label="Next slide"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+        <button
+          onClick={() => setPlaying((p) => !p)}
+          className="absolute right-6 text-white/80 transition hover:text-white"
+          aria-label={playing ? "Pause" : "Play"}
+        >
+          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </button>
+        <button
+          onClick={() => go(index - 1)}
+          className="absolute left-6 text-white/80 transition hover:text-white"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+      </div>
+    </section>
   );
 }
 
