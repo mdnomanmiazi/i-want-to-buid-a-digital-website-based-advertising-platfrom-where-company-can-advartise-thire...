@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, X } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { CATEGORIES, PLAN_LIST, PLANS, type PlanId, formatBDT } from "@/lib/plans";
 import { generateTransactionId, initiatePayment } from "@/lib/payment";
+
+const MAX_IMAGES = 8;
+const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 5; // 5 years
 
 export const Route = createFileRoute("/_authenticated/dashboard/new-ad")({
   validateSearch: (s: Record<string, unknown>) => ({
