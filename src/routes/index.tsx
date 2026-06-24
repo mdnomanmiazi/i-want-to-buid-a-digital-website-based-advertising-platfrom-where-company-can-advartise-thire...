@@ -13,7 +13,7 @@ const EDITORIAL_SLIDES = [
     title: "Days of Summer",
     cta: "For Her",
     href: "/browse",
-    video: "https://videos.pexels.com/video-files/4434242/4434242-uhd_2560_1440_30fps.mp4",
+    video: "https://www.youtube.com/embed/50PU-cQx7j0",
     poster: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1920&q=80",
   },
   {
