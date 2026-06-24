@@ -59,7 +59,7 @@ interface AdRow {
   plan: string;
 }
 
-const HERO_VIDEO = "https://www.youtube.com/embed/50PU-cQx7j0";
+const HERO_VIDEO = "https://youtu.be/50PU-cQx7j0";
 const HERO_POSTER = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80";
 const FEATURE_LIFESTYLE = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=85";
 const FEATURE_PRODUCT = "https://images.unsplash.com/photo-1591348278863-a8fb3887e2aa?auto=format&fit=crop&w=900&q=85";
