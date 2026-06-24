@@ -1,11 +1,39 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, formatBDT } from "@/lib/plans";
+
+const EDITORIAL_SLIDES = [
+  {
+    kicker: "The Digital Edit",
+    title: "Days of Summer",
+    cta: "For Her",
+    href: "/browse",
+    video: "https://videos.pexels.com/video-files/4434242/4434242-uhd_2560_1440_30fps.mp4",
+    poster: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1920&q=80",
+  },
+  {
+    kicker: "New Arrivals",
+    title: "Modern Essentials",
+    cta: "Shop Now",
+    href: "/browse",
+    video: "https://videos.pexels.com/video-files/3024269/3024269-uhd_2560_1440_24fps.mp4",
+    poster: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1920&q=80",
+  },
+  {
+    kicker: "Featured Brands",
+    title: "Crafted with Care",
+    cta: "Discover",
+    href: "/browse",
+    video: "https://videos.pexels.com/video-files/4763824/4763824-uhd_2560_1440_25fps.mp4",
+    poster: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1920&q=80",
+  },
+];
+const SLIDE_DURATION = 6000;
 
 export const Route = createFileRoute("/")({
   head: () => ({
