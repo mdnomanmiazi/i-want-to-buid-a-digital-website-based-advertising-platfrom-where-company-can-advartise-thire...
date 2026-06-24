@@ -25,18 +25,6 @@ export const Route = createFileRoute("/_authenticated/dashboard/new-ad")({
   component: NewAd,
 });
 
-const schema = z.object({
-  title: z.string().trim().min(3).max(120),
-  description: z.string().trim().min(10).max(2000),
-  category: z.string().min(1),
-  original_price: z.number().nonnegative().optional(),
-  offer_price: z.number().positive(),
-  image_url: z.string().url().optional().or(z.literal("")),
-  link_url: z.string().url().optional().or(z.literal("")),
-  contact_phone: z.string().min(6).max(20),
-  location: z.string().max(80).optional(),
-  company_name: z.string().min(2).max(120),
-});
 
 const schema = z.object({
   title: z.string().trim().min(3).max(120),
