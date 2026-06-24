@@ -160,6 +160,9 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ===================== EDITORIAL VIDEO CAROUSEL ===================== */}
+      <EditorialCarousel />
+
       {/* ===================== CATEGORY TOGGLE + GRID ===================== */}
       <section className="bg-white">
         <div className="flex justify-center px-4 pb-8 pt-20">
