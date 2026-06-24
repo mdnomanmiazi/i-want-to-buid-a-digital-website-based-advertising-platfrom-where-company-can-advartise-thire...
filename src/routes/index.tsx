@@ -260,6 +260,109 @@ function HomePage() {
   );
 }
 
+function InterestEdit() {
+  const [audience, setAudience] = useState<"Women" | "Men">("Women");
+
+  const { data: items, isLoading } = useQuery({
+    queryKey: ["interest-edit", audience],
+    queryFn: async () => {
+      const keywords =
+        audience === "Women"
+          ? ["women", "woman", "her", "ladies", "female", "girl", "dress", "skirt", "heel"]
+          : ["men", "man", "him", "male", "guy", "gentleman", "suit", "beard"];
+      const orFilter = keywords.map((k) => `title.ilike.%${k}%,description.ilike.%${k}%`).join(",");
+      const { data, error } = await supabase
+        .from("ads")
+        .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
+        .eq("status", "approved")
+        .or(orFilter)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      // Fallback: if no matches, return latest approved
+      if (!data || data.length === 0) {
+        const { data: fb } = await supabase
+          .from("ads")
+          .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
+          .eq("status", "approved")
+          .order("created_at", { ascending: false })
+          .limit(4);
+        return (fb ?? []) as AdRow[];
+      }
+      return data as AdRow[];
+    },
+  });
+
+  return (
+    <section className="bg-white pt-24">
+      <div className="mx-auto max-w-3xl px-6 text-center">
+        <p className="font-display text-lg font-light leading-relaxed text-foreground sm:text-xl">
+          Lightness and pure textures shape the essence of the season in a new
+          curated edit, with an online exclusive selection.
+        </p>
+        <div className="mt-10 flex items-center justify-center gap-10">
+          {(["Women", "Men"] as const).map((a) => {
+            const active = audience === a;
+            return (
+              <button
+                key={a}
+                onClick={() => setAudience(a)}
+                className={`relative pb-2 text-sm font-medium tracking-wide transition ${
+                  active ? "text-foreground" : "text-foreground/50 hover:text-foreground"
+                }`}
+              >
+                {a}
+                {active && <span className="absolute inset-x-0 -bottom-px h-px bg-foreground" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-14 grid grid-cols-2 lg:grid-cols-4">
+        {(isLoading ? Array.from({ length: 4 }) : items ?? []).map((ad, i) => (
+          <InterestTile key={(ad as AdRow)?.id ?? `ie-${i}`} ad={ad as AdRow | undefined} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function InterestTile({ ad }: { ad?: AdRow }) {
+  if (!ad) {
+    return (
+      <div className="block">
+        <div className="aspect-[3/4] animate-pulse bg-muted" />
+        <div className="px-6 py-6 text-center">
+          <div className="mx-auto h-3 w-32 animate-pulse bg-muted" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <Link to="/ad/$id" params={{ id: ad.id }} className="group block">
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        {ad.image_url ? (
+          <img
+            src={ad.image_url}
+            alt={ad.title}
+            loading="lazy"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          />
+        ) : (
+          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-foreground/5 to-foreground/10 text-foreground/40">
+            <span className="font-display text-2xl">AYNA</span>
+          </div>
+        )}
+      </div>
+      <div className="px-6 py-6 text-center">
+        <h3 className="line-clamp-1 text-sm font-medium tracking-tight text-foreground">{ad.title}</h3>
+        <p className="mt-1 text-xs text-foreground/60">{formatBDT(ad.offer_price)}</p>
+      </div>
+    </Link>
+  );
+}
+
 function EditorialCarousel() {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
