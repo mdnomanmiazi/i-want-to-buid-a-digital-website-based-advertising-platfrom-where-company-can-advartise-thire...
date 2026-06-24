@@ -38,12 +38,47 @@ const schema = z.object({
   company_name: z.string().min(2).max(120),
 });
 
+const schema = z.object({
+  title: z.string().trim().min(3).max(120),
+  description: z.string().trim().min(10).max(2000),
+  category: z.string().min(1),
+  original_price: z.number().nonnegative().optional(),
+  offer_price: z.number().positive(),
+  link_url: z.string().url().optional().or(z.literal("")),
+  contact_phone: z.string().min(6).max(20),
+  location: z.string().max(80).optional(),
+  company_name: z.string().min(2).max(120),
+});
+
 function NewAd() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { plan: initialPlan } = Route.useSearch();
   const [plan, setPlan] = useState<PlanId>(initialPlan);
   const [submitting, setSubmitting] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const arr = Array.from(incoming).filter((f) => f.type.startsWith("image/"));
+    const room = MAX_IMAGES - files.length;
+    if (room <= 0) {
+      toast.error(`Max ${MAX_IMAGES} images`);
+      return;
+    }
+    const next = arr.slice(0, room);
+    setFiles((prev) => [...prev, ...next]);
+    setPreviews((prev) => [...prev, ...next.map((f) => URL.createObjectURL(f))]);
+  };
+
+  const removeAt = (i: number) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviews((prev) => {
+      URL.revokeObjectURL(prev[i]);
+      return prev.filter((_, idx) => idx !== i);
+    });
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
