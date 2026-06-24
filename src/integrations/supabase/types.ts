@@ -147,6 +147,7 @@ export type Database = {
           expires_at: string | null
           id: string
           image_url: string | null
+          image_urls: string[]
           link_url: string | null
           location: string | null
           offer_price: number
@@ -169,6 +170,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           image_url?: string | null
+          image_urls?: string[]
           link_url?: string | null
           location?: string | null
           offer_price: number
@@ -191,6 +193,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           image_url?: string | null
+          image_urls?: string[]
           link_url?: string | null
           location?: string | null
           offer_price?: number

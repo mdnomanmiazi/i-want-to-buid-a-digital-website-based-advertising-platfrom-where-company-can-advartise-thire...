@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, X } from "lucide-react";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { CATEGORIES, PLAN_LIST, PLANS, type PlanId, formatBDT } from "@/lib/plans";
 import { generateTransactionId, initiatePayment } from "@/lib/payment";
 
+const MAX_IMAGES = 8;
+const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 5; // 5 years
+
 export const Route = createFileRoute("/_authenticated/dashboard/new-ad")({
   validateSearch: (s: Record<string, unknown>) => ({
     plan: (s.plan as PlanId) ?? "single",
@@ -22,13 +25,13 @@ export const Route = createFileRoute("/_authenticated/dashboard/new-ad")({
   component: NewAd,
 });
 
+
 const schema = z.object({
   title: z.string().trim().min(3).max(120),
   description: z.string().trim().min(10).max(2000),
   category: z.string().min(1),
   original_price: z.number().nonnegative().optional(),
   offer_price: z.number().positive(),
-  image_url: z.string().url().optional().or(z.literal("")),
   link_url: z.string().url().optional().or(z.literal("")),
   contact_phone: z.string().min(6).max(20),
   location: z.string().max(80).optional(),
@@ -41,6 +44,29 @@ function NewAd() {
   const { plan: initialPlan } = Route.useSearch();
   const [plan, setPlan] = useState<PlanId>(initialPlan);
   const [submitting, setSubmitting] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const arr = Array.from(incoming).filter((f) => f.type.startsWith("image/"));
+    const room = MAX_IMAGES - files.length;
+    if (room <= 0) {
+      toast.error(`Max ${MAX_IMAGES} images`);
+      return;
+    }
+    const next = arr.slice(0, room);
+    setFiles((prev) => [...prev, ...next]);
+    setPreviews((prev) => [...prev, ...next.map((f) => URL.createObjectURL(f))]);
+  };
+
+  const removeAt = (i: number) => {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviews((prev) => {
+      URL.revokeObjectURL(prev[i]);
+      return prev.filter((_, idx) => idx !== i);
+    });
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -52,7 +78,6 @@ function NewAd() {
       category: fd.get("category"),
       original_price: fd.get("original_price") ? Number(fd.get("original_price")) : undefined,
       offer_price: Number(fd.get("offer_price")),
-      image_url: fd.get("image_url") || "",
       link_url: fd.get("link_url") || "",
       contact_phone: fd.get("contact_phone"),
       location: fd.get("location") || undefined,
@@ -62,8 +87,37 @@ function NewAd() {
       toast.error(parsed.error.issues[0].message);
       return;
     }
+    if (files.length === 0) {
+      toast.error("Please upload at least one image");
+      return;
+    }
     setSubmitting(true);
     const d = parsed.data;
+
+    // Upload images
+    const uploadedUrls: string[] = [];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("ad-images").upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
+        if (upErr) throw upErr;
+        const { data: signed, error: signErr } = await supabase.storage
+          .from("ad-images")
+          .createSignedUrl(path, SIGNED_URL_TTL);
+        if (signErr || !signed) throw signErr ?? new Error("Failed to sign URL");
+        uploadedUrls.push(signed.signedUrl);
+      }
+    } catch (err) {
+      setSubmitting(false);
+      toast.error(err instanceof Error ? err.message : "Image upload failed");
+      return;
+    }
 
     const discount = d.original_price && d.original_price > d.offer_price
       ? Math.round(((d.original_price - d.offer_price) / d.original_price) * 100)
@@ -81,7 +135,8 @@ function NewAd() {
         original_price: d.original_price ?? null,
         offer_price: d.offer_price,
         discount_percent: discount,
-        image_url: d.image_url || null,
+        image_url: uploadedUrls[0],
+        image_urls: uploadedUrls,
         link_url: d.link_url || null,
         contact_phone: d.contact_phone,
         location: d.location || null,
@@ -92,6 +147,7 @@ function NewAd() {
       .select()
       .single();
     if (adErr || !ad) { setSubmitting(false); toast.error(adErr?.message ?? "Failed to create ad"); return; }
+
 
     // Update profile company_name if blank
     await supabase.from("profiles").update({ company_name: d.company_name, phone: d.contact_phone }).eq("id", user.id);
@@ -147,7 +203,48 @@ function NewAd() {
               <div><Label>Location</Label><Input name="location" placeholder="Dhaka" /></div>
               <div><Label>Original price (BDT)</Label><Input name="original_price" type="number" min="0" step="1" /></div>
               <div><Label>Offer price (BDT)*</Label><Input name="offer_price" type="number" min="1" step="1" required /></div>
-              <div className="sm:col-span-2"><Label>Image URL</Label><Input name="image_url" type="url" placeholder="https://..." /></div>
+              <div className="sm:col-span-2">
+                <Label>Offer images* <span className="text-xs font-normal text-muted-foreground">(up to {MAX_IMAGES})</span></Label>
+                <label
+                  htmlFor="ad-image-upload"
+                  className="mt-2 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-6 py-8 text-center transition hover:border-primary hover:bg-muted/50"
+                >
+                  <Upload className="h-6 w-6 text-muted-foreground" />
+                  <div className="text-sm">
+                    <span className="font-medium text-foreground">Click to upload</span>{" "}
+                    <span className="text-muted-foreground">or drag images here</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, WEBP — up to {MAX_IMAGES} files</p>
+                  <input
+                    id="ad-image-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
+                  />
+                </label>
+                {previews.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {previews.map((src, i) => (
+                      <div key={src} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
+                        <img src={src} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeAt(i)}
+                          className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                          aria-label="Remove image"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">Cover</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="sm:col-span-2"><Label>Offer link (optional)</Label><Input name="link_url" type="url" placeholder="https://yourbrand.com/offer" /></div>
               <div><Label>Contact phone*</Label><Input name="contact_phone" required placeholder="+8801..." /></div>
               <div><Label>Company name*</Label><Input name="company_name" required placeholder="Your brand" /></div>

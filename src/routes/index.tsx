@@ -194,6 +194,7 @@ function HomePage() {
             <AdTile key={(ad as AdRow)?.id ?? `s-${i}`} ad={ad as AdRow | undefined} />
           ))}
         </div>
+        <div className="h-24 md:h-32" />
       </section>
 
       {/* ===================== SPLIT FEATURE ===================== */}
