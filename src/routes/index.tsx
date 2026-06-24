@@ -13,7 +13,7 @@ const EDITORIAL_SLIDES = [
     title: "Days of Summer",
     cta: "For Her",
     href: "/browse",
-    video: "https://www.youtube.com/embed/50PU-cQx7j0",
+    video: "https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4",
     poster: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1920&q=80",
   },
   {
@@ -59,7 +59,7 @@ interface AdRow {
   plan: string;
 }
 
-const HERO_VIDEO = "https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4";
+const HERO_VIDEO = "https://www.youtube.com/embed/50PU-cQx7j0";
 const HERO_POSTER = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1920&q=80";
 const FEATURE_LIFESTYLE = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=85";
 const FEATURE_PRODUCT = "https://images.unsplash.com/photo-1591348278863-a8fb3887e2aa?auto=format&fit=crop&w=900&q=85";
