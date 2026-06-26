@@ -214,6 +214,7 @@ export type Database = {
           company_name: string | null
           created_at: string
           id: string
+          interests: string[]
           logo_url: string | null
           phone: string | null
           updated_at: string
@@ -223,6 +224,7 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id: string
+          interests?: string[]
           logo_url?: string | null
           phone?: string | null
           updated_at?: string
@@ -232,6 +234,7 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           id?: string
+          interests?: string[]
           logo_url?: string | null
           phone?: string | null
           updated_at?: string
@@ -295,6 +298,35 @@ export type Database = {
             columns: ["payment_id"]
             isOneToOne: false
             referencedRelation: "ad_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_favorites: {
+        Row: {
+          ad_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          ad_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          ad_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
             referencedColumns: ["id"]
           },
         ]
