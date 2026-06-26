@@ -70,6 +70,21 @@ const PAGE_SIZE = 12;
 
 function HomePage() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const { user } = useAuth();
+
+  // Personalization: load interests for signed-in users
+  const { data: interests } = useQuery({
+    enabled: !!user,
+    queryKey: ["my-interests", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("interests")
+        .eq("id", user!.id)
+        .maybeSingle();
+      return (data?.interests ?? []) as string[];
+    },
+  });
 
   // Top "shelf" — first 8 ads for the category grid section
   const { data: shelf } = useQuery({
