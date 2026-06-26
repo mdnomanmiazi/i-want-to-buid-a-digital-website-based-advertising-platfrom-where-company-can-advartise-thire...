@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdIdRouteImport } from './routes/ad.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedOnboardingInterestsRouteImport } from './routes/_authenticated/onboarding.interests'
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard/profile'
 import { Route as AuthenticatedDashboardPaymentResultRouteImport } from './routes/_authenticated/dashboard/payment-result'
 import { Route as AuthenticatedDashboardNewAdRouteImport } from './routes/_authenticated/dashboard/new-ad'
@@ -86,6 +87,12 @@ const AuthenticatedDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOnboardingInterestsRoute =
+  AuthenticatedOnboardingInterestsRouteImport.update({
+    id: '/onboarding/interests',
+    path: '/onboarding/interests',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardProfileRoute =
   AuthenticatedDashboardProfileRouteImport.update({
     id: '/dashboard/profile',
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/new-ad': typeof AuthenticatedDashboardNewAdRoute
   '/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/onboarding/interests': typeof AuthenticatedOnboardingInterestsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/edit-ad/$id': typeof AuthenticatedDashboardEditAdIdRoute
 }
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/dashboard/new-ad': typeof AuthenticatedDashboardNewAdRoute
   '/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/onboarding/interests': typeof AuthenticatedOnboardingInterestsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/edit-ad/$id': typeof AuthenticatedDashboardEditAdIdRoute
 }
@@ -161,6 +170,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/new-ad': typeof AuthenticatedDashboardNewAdRoute
   '/_authenticated/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/_authenticated/onboarding/interests': typeof AuthenticatedOnboardingInterestsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/edit-ad/$id': typeof AuthenticatedDashboardEditAdIdRoute
 }
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/dashboard/new-ad'
     | '/dashboard/payment-result'
     | '/dashboard/profile'
+    | '/onboarding/interests'
     | '/dashboard/'
     | '/dashboard/edit-ad/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/dashboard/new-ad'
     | '/dashboard/payment-result'
     | '/dashboard/profile'
+    | '/onboarding/interests'
     | '/dashboard'
     | '/dashboard/edit-ad/$id'
   id:
@@ -215,6 +227,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/new-ad'
     | '/_authenticated/dashboard/payment-result'
     | '/_authenticated/dashboard/profile'
+    | '/_authenticated/onboarding/interests'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/edit-ad/$id'
   fileRoutesById: FileRoutesById
@@ -318,6 +331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/onboarding/interests': {
+      id: '/_authenticated/onboarding/interests'
+      path: '/onboarding/interests'
+      fullPath: '/onboarding/interests'
+      preLoaderRoute: typeof AuthenticatedOnboardingInterestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard/profile': {
       id: '/_authenticated/dashboard/profile'
       path: '/dashboard/profile'
@@ -354,6 +374,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardNewAdRoute: typeof AuthenticatedDashboardNewAdRoute
   AuthenticatedDashboardPaymentResultRoute: typeof AuthenticatedDashboardPaymentResultRoute
   AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
+  AuthenticatedOnboardingInterestsRoute: typeof AuthenticatedOnboardingInterestsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedDashboardEditAdIdRoute: typeof AuthenticatedDashboardEditAdIdRoute
 }
@@ -364,6 +385,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardPaymentResultRoute:
     AuthenticatedDashboardPaymentResultRoute,
   AuthenticatedDashboardProfileRoute: AuthenticatedDashboardProfileRoute,
+  AuthenticatedOnboardingInterestsRoute: AuthenticatedOnboardingInterestsRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedDashboardEditAdIdRoute: AuthenticatedDashboardEditAdIdRoute,
 }

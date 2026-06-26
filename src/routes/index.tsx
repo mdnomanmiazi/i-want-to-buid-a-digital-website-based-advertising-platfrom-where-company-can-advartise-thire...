@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, formatBDT } from "@/lib/plans";
+import { WelcomeModal } from "@/components/welcome-modal";
+import { useAuth } from "@/hooks/use-auth";
 
 const EDITORIAL_SLIDES = [
   {
@@ -68,6 +70,21 @@ const PAGE_SIZE = 12;
 
 function HomePage() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const { user } = useAuth();
+
+  // Personalization: load interests for signed-in users
+  const { data: interests } = useQuery({
+    enabled: !!user,
+    queryKey: ["my-interests", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("interests")
+        .eq("id", user!.id)
+        .maybeSingle();
+      return (data?.interests ?? []) as string[];
+    },
+  });
 
   // Top "shelf" — first 8 ads for the category grid section
   const { data: shelf } = useQuery({
@@ -86,19 +103,22 @@ function HomePage() {
     },
   });
 
-  // Infinite feed
+  // Infinite feed (personalized by interests if available)
+  const personalCats = interests ?? [];
   const feed = useInfiniteQuery({
-    queryKey: ["home-feed"],
+    queryKey: ["home-feed", personalCats],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const from = (pageParam as number) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
-      const { data, error } = await supabase
+      let q = supabase
         .from("ads")
         .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .range(from, to);
+      if (personalCats.length > 0) q = q.in("category", personalCats);
+      const { data, error } = await q;
       if (error) throw error;
       return { rows: (data ?? []) as AdRow[], next: data && data.length === PAGE_SIZE ? (pageParam as number) + 1 : null };
     },
@@ -232,8 +252,17 @@ function HomePage() {
       {/* ===================== MORE TO LOVE ===================== */}
       <section className="bg-white px-4 py-24 sm:px-6">
         <div className="mb-16 text-center">
-          <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.4em] text-foreground/60">An endless feed</p>
-          <h2 className="font-display text-4xl font-light tracking-tight sm:text-5xl md:text-6xl">More to love</h2>
+          <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.4em] text-foreground/60">
+            {personalCats.length > 0 ? "Picked for you" : "An endless feed"}
+          </p>
+          <h2 className="font-display text-4xl font-light tracking-tight sm:text-5xl md:text-6xl">
+            {personalCats.length > 0 ? "Made for your taste" : "More to love"}
+          </h2>
+          {personalCats.length > 0 && (
+            <p className="mt-3 text-xs text-foreground/60">
+              Based on your interests · <Link to="/onboarding/interests" search={{ redirect: "/" } as any} className="underline">edit</Link>
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-1 sm:gap-1.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
@@ -257,6 +286,7 @@ function HomePage() {
       </section>
 
       <SiteFooter />
+      <WelcomeModal />
     </div>
   );
 }
