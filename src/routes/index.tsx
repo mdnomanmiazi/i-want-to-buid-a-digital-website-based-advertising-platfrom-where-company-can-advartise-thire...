@@ -252,8 +252,17 @@ function HomePage() {
       {/* ===================== MORE TO LOVE ===================== */}
       <section className="bg-white px-4 py-24 sm:px-6">
         <div className="mb-16 text-center">
-          <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.4em] text-foreground/60">An endless feed</p>
-          <h2 className="font-display text-4xl font-light tracking-tight sm:text-5xl md:text-6xl">More to love</h2>
+          <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.4em] text-foreground/60">
+            {personalCats.length > 0 ? "Picked for you" : "An endless feed"}
+          </p>
+          <h2 className="font-display text-4xl font-light tracking-tight sm:text-5xl md:text-6xl">
+            {personalCats.length > 0 ? "Made for your taste" : "More to love"}
+          </h2>
+          {personalCats.length > 0 && (
+            <p className="mt-3 text-xs text-foreground/60">
+              Based on your interests · <Link to="/onboarding/interests" search={{ redirect: "/" } as any} className="underline">edit</Link>
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-1 sm:gap-1.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
@@ -277,6 +286,7 @@ function HomePage() {
       </section>
 
       <SiteFooter />
+      <WelcomeModal />
     </div>
   );
 }
