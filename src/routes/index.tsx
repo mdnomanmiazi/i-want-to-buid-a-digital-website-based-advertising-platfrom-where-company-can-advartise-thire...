@@ -6,6 +6,8 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, formatBDT } from "@/lib/plans";
+import { WelcomeModal } from "@/components/welcome-modal";
+import { useAuth } from "@/hooks/use-auth";
 
 const EDITORIAL_SLIDES = [
   {
