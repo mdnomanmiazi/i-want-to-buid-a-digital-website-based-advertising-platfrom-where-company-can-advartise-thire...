@@ -103,19 +103,22 @@ function HomePage() {
     },
   });
 
-  // Infinite feed
+  // Infinite feed (personalized by interests if available)
+  const personalCats = interests ?? [];
   const feed = useInfiniteQuery({
-    queryKey: ["home-feed"],
+    queryKey: ["home-feed", personalCats],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const from = (pageParam as number) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
-      const { data, error } = await supabase
+      let q = supabase
         .from("ads")
         .select("id,title,category,original_price,offer_price,discount_percent,image_url,location,plan")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .range(from, to);
+      if (personalCats.length > 0) q = q.in("category", personalCats);
+      const { data, error } = await q;
       if (error) throw error;
       return { rows: (data ?? []) as AdRow[], next: data && data.length === PAGE_SIZE ? (pageParam as number) + 1 : null };
     },
