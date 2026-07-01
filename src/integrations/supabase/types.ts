@@ -211,6 +211,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["account_type"]
           company_name: string | null
           created_at: string
           id: string
@@ -218,9 +219,11 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           updated_at: string
+          username: string | null
           website: string | null
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           company_name?: string | null
           created_at?: string
           id: string
@@ -228,9 +231,11 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           updated_at?: string
+          username?: string | null
           website?: string | null
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["account_type"]
           company_name?: string | null
           created_at?: string
           id?: string
@@ -238,6 +243,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           updated_at?: string
+          username?: string | null
           website?: string | null
         }
         Relationships: []
@@ -367,6 +373,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_type: "end_user" | "advertiser" | "admin"
       ad_plan: "single" | "monthly" | "yearly"
       ad_status:
         | "draft"
@@ -506,6 +513,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["end_user", "advertiser", "admin"],
       ad_plan: ["single", "monthly", "yearly"],
       ad_status: [
         "draft",
