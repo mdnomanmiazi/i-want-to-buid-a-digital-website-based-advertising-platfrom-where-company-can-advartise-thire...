@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { LogOut, Menu, Search, ShieldCheck, User as UserIcon, X } from "lucide-react";
 
-import { useAuth, useIsAdmin } from "@/hooks/use-auth";
+import { useAuth, useIsAdmin, useAccountType, type AccountType } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
@@ -26,21 +26,47 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const NAV_LINKS = [
-  { to: "/browse", label: "Browse" },
-  { to: "/pricing", label: "Pricing" },
-  { to: "/how-it-works", label: "How it works" },
+type NavItem = { to: string; label: string };
+
+const END_USER_NAV: NavItem[] = [
+  { to: "/browse", label: "Product" },
+  { to: "/how-it-works", label: "How It Works" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
 
+const ADVERTISER_NAV: NavItem[] = [
+  { to: "/advertiser/trends", label: "Market Trends" },
+  { to: "/pricing", label: "Pricing" },
+  { to: "/how-it-works", label: "How It Works" },
+  { to: "/about", label: "About" },
+  { to: "/dashboard/new-ad", label: "Post Ads" },
+  { to: "/become-advertiser", label: "Become an Advertiser" },
+  { to: "/advertiser/activity", label: "Activity" },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { to: "/admin/status", label: "Current Status" },
+  { to: "/admin/approvals", label: "Approvals" },
+  { to: "/admin/finance", label: "Financial Management" },
+];
+
+function navFor(type: AccountType | null, isAdmin: boolean): NavItem[] {
+  if (isAdmin) return ADMIN_NAV;
+  if (type === "advertiser") return ADVERTISER_NAV;
+  return END_USER_NAV;
+}
+
 export function SiteHeader() {
   const { user, loading } = useAuth();
   const isAdmin = useIsAdmin(user?.id);
+  const accountType = useAccountType(user?.id);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  const links = navFor(accountType, isAdmin);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -56,14 +82,10 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto grid h-16 max-w-[1600px] grid-cols-3 items-center px-4 sm:px-6 lg:px-10">
-        {/* LEFT — hamburger + search */}
         <div className="flex items-center gap-1">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
-              <button
-                aria-label="Open menu"
-                className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5"
-              >
+              <button aria-label="Open menu" className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5">
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -72,26 +94,25 @@ export function SiteHeader() {
                 <SheetTitle className="font-display text-2xl tracking-tight">AYNA</SheetTitle>
               </SheetHeader>
               <nav className="mt-8 flex flex-col">
-                {NAV_LINKS.map((l) => (
-                  <Link
-                    key={l.to}
-                    to={l.to}
-                    onClick={() => setMenuOpen(false)}
-                    className="border-b border-border/60 py-4 font-display text-lg tracking-tight transition hover:text-primary"
-                  >
+                {links.map((l) => (
+                  <Link key={l.to} to={l.to} onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg tracking-tight transition hover:text-primary">
                     {l.label}
                   </Link>
                 ))}
                 {user ? (
                   <>
-                    <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">My ads</Link>
-                    <Link to="/dashboard/new-ad" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">Post an offer</Link>
+                    {accountType === "advertiser" && (
+                      <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">My ads</Link>
+                    )}
+                    {accountType === "end_user" && !isAdmin && (
+                      <Link to="/me" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">My account</Link>
+                    )}
                     {isAdmin && (
                       <Link to="/admin" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">Admin</Link>
                     )}
                   </>
                 ) : (
-                  <Link to="/auth" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">Sign in</Link>
+                  <Link to="/auth" onClick={() => setMenuOpen(false)} className="border-b border-border/60 py-4 font-display text-lg">Sign In</Link>
                 )}
               </nav>
             </SheetContent>
@@ -99,26 +120,15 @@ export function SiteHeader() {
 
           <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
             <DialogTrigger asChild>
-              <button
-                aria-label="Search"
-                className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5"
-              >
+              <button aria-label="Search" className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5">
                 <Search className="h-5 w-5" />
               </button>
             </DialogTrigger>
             <DialogContent className="top-24 max-w-2xl translate-y-0 border-0 bg-white p-0 shadow-2xl">
-              <DialogHeader className="sr-only">
-                <DialogTitle>Search offers</DialogTitle>
-              </DialogHeader>
+              <DialogHeader className="sr-only"><DialogTitle>Search offers</DialogTitle></DialogHeader>
               <form onSubmit={submitSearch} className="flex items-center gap-3 px-6 py-5">
                 <Search className="h-5 w-5 text-muted-foreground" />
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search offers, brands, categories…"
-                  className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
-                />
+                <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search offers, brands, categories…" className="flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground" />
                 <button type="button" onClick={() => setSearchOpen(false)} aria-label="Close" className="text-muted-foreground hover:text-foreground">
                   <X className="h-5 w-5" />
                 </button>
@@ -127,38 +137,38 @@ export function SiteHeader() {
           </Dialog>
         </div>
 
-        {/* CENTER — logo */}
         <div className="flex items-center justify-center">
-          <Link to="/" className="font-display text-2xl font-bold tracking-[0.25em]">
-            AYNA
-          </Link>
+          <Link to="/" className="font-display text-2xl font-bold tracking-[0.25em]">AYNA</Link>
         </div>
 
-        {/* RIGHT — contact + account */}
         <div className="flex items-center justify-end gap-1">
-          <Link
-            to="/contact"
-            className="hidden rounded-full px-4 py-2 text-sm font-medium tracking-wide text-foreground/80 transition hover:text-foreground sm:inline-flex"
-          >
+          <Link to="/contact" className="hidden rounded-full px-4 py-2 text-sm font-medium tracking-wide text-foreground/80 transition hover:text-foreground sm:inline-flex">
             Contact Us
           </Link>
 
           {!loading && user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  aria-label="Account"
-                  className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5"
-                >
+                <button aria-label="Account" className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5">
                   <UserIcon className="h-5 w-5" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <div className="truncate px-2 py-1.5 text-xs text-muted-foreground">{user.email}</div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link to="/dashboard">My ads</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to="/dashboard/new-ad">Post an offer</Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link to="/dashboard/profile">Profile</Link></DropdownMenuItem>
+                {accountType === "advertiser" && (
+                  <>
+                    <DropdownMenuItem asChild><Link to="/dashboard">My ads</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link to="/dashboard/new-ad">Post an offer</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link to="/dashboard/profile">Business profile</Link></DropdownMenuItem>
+                  </>
+                )}
+                {accountType === "end_user" && !isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild><Link to="/me">My account</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link to="/become-advertiser">Become an advertiser</Link></DropdownMenuItem>
+                  </>
+                )}
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin"><ShieldCheck className="h-4 w-4" /> Admin</Link>
@@ -171,16 +181,11 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link
-              to="/auth"
-              aria-label="Sign in"
-              className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5"
-            >
+            <Link to="/auth" aria-label="Sign in" className="grid h-10 w-10 place-items-center rounded-full text-foreground/80 transition hover:bg-foreground/5">
               <UserIcon className="h-5 w-5" />
             </Link>
           )}
         </div>
-
       </div>
     </header>
   );

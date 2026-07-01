@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AccountType = "end_user" | "advertiser" | "admin";
+
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -36,4 +38,18 @@ export function useIsAdmin(userId?: string | null) {
       .then(({ data }) => setIsAdmin(!!data));
   }, [userId]);
   return isAdmin;
+}
+
+export function useAccountType(userId?: string | null): AccountType | null {
+  const [type, setType] = useState<AccountType | null>(null);
+  useEffect(() => {
+    if (!userId) { setType(null); return; }
+    supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }) => setType(((data as any)?.account_type as AccountType) ?? "end_user"));
+  }, [userId]);
+  return type;
 }
