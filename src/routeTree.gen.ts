@@ -14,11 +14,19 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as BecomeAdvertiserRouteImport } from './routes/become-advertiser'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdvertiserTrendsRouteImport } from './routes/advertiser.trends'
+import { Route as AdvertiserActivityRouteImport } from './routes/advertiser.activity'
+import { Route as AdminStatusRouteImport } from './routes/admin.status'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
+import { Route as AdminApprovalsRouteImport } from './routes/admin.approvals'
 import { Route as AdIdRouteImport } from './routes/ad.$id'
+import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedOnboardingInterestsRouteImport } from './routes/_authenticated/onboarding.interests'
@@ -52,6 +60,11 @@ const BrowseRoute = BrowseRouteImport.update({
   path: '/browse',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BecomeAdvertiserRoute = BecomeAdvertiserRouteImport.update({
+  id: '/become-advertiser',
+  path: '/become-advertiser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -71,10 +84,45 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdvertiserTrendsRoute = AdvertiserTrendsRouteImport.update({
+  id: '/advertiser/trends',
+  path: '/advertiser/trends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvertiserActivityRoute = AdvertiserActivityRouteImport.update({
+  id: '/advertiser/activity',
+  path: '/advertiser/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminStatusRoute = AdminStatusRouteImport.update({
+  id: '/admin/status',
+  path: '/admin/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/admin/finance',
+  path: '/admin/finance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminApprovalsRoute = AdminApprovalsRouteImport.update({
+  id: '/admin/approvals',
+  path: '/admin/approvals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdIdRoute = AdIdRouteImport.update({
   id: '/ad/$id',
   path: '/ad/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
@@ -122,13 +170,21 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/become-advertiser': typeof BecomeAdvertiserRoute
   '/browse': typeof BrowseRoute
   '/contact': typeof ContactRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/me': typeof AuthenticatedMeRoute
   '/ad/$id': typeof AdIdRoute
+  '/admin/approvals': typeof AdminApprovalsRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/status': typeof AdminStatusRoute
+  '/advertiser/activity': typeof AdvertiserActivityRoute
+  '/advertiser/trends': typeof AdvertiserTrendsRoute
   '/dashboard/new-ad': typeof AuthenticatedDashboardNewAdRoute
   '/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -140,13 +196,21 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/become-advertiser': typeof BecomeAdvertiserRoute
   '/browse': typeof BrowseRoute
   '/contact': typeof ContactRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/me': typeof AuthenticatedMeRoute
   '/ad/$id': typeof AdIdRoute
+  '/admin/approvals': typeof AdminApprovalsRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/status': typeof AdminStatusRoute
+  '/advertiser/activity': typeof AdvertiserActivityRoute
+  '/advertiser/trends': typeof AdvertiserTrendsRoute
   '/dashboard/new-ad': typeof AuthenticatedDashboardNewAdRoute
   '/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -160,13 +224,21 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/become-advertiser': typeof BecomeAdvertiserRoute
   '/browse': typeof BrowseRoute
   '/contact': typeof ContactRoute
   '/how-it-works': typeof HowItWorksRoute
   '/pricing': typeof PricingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/me': typeof AuthenticatedMeRoute
   '/ad/$id': typeof AdIdRoute
+  '/admin/approvals': typeof AdminApprovalsRoute
+  '/admin/finance': typeof AdminFinanceRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/status': typeof AdminStatusRoute
+  '/advertiser/activity': typeof AdvertiserActivityRoute
+  '/advertiser/trends': typeof AdvertiserTrendsRoute
   '/_authenticated/dashboard/new-ad': typeof AuthenticatedDashboardNewAdRoute
   '/_authenticated/dashboard/payment-result': typeof AuthenticatedDashboardPaymentResultRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -180,13 +252,21 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/become-advertiser'
     | '/browse'
     | '/contact'
     | '/how-it-works'
     | '/pricing'
     | '/sitemap.xml'
     | '/admin'
+    | '/me'
     | '/ad/$id'
+    | '/admin/approvals'
+    | '/admin/finance'
+    | '/admin/login'
+    | '/admin/status'
+    | '/advertiser/activity'
+    | '/advertiser/trends'
     | '/dashboard/new-ad'
     | '/dashboard/payment-result'
     | '/dashboard/profile'
@@ -198,13 +278,21 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/become-advertiser'
     | '/browse'
     | '/contact'
     | '/how-it-works'
     | '/pricing'
     | '/sitemap.xml'
     | '/admin'
+    | '/me'
     | '/ad/$id'
+    | '/admin/approvals'
+    | '/admin/finance'
+    | '/admin/login'
+    | '/admin/status'
+    | '/advertiser/activity'
+    | '/advertiser/trends'
     | '/dashboard/new-ad'
     | '/dashboard/payment-result'
     | '/dashboard/profile'
@@ -217,13 +305,21 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
+    | '/become-advertiser'
     | '/browse'
     | '/contact'
     | '/how-it-works'
     | '/pricing'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/_authenticated/me'
     | '/ad/$id'
+    | '/admin/approvals'
+    | '/admin/finance'
+    | '/admin/login'
+    | '/admin/status'
+    | '/advertiser/activity'
+    | '/advertiser/trends'
     | '/_authenticated/dashboard/new-ad'
     | '/_authenticated/dashboard/payment-result'
     | '/_authenticated/dashboard/profile'
@@ -237,12 +333,19 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  BecomeAdvertiserRoute: typeof BecomeAdvertiserRoute
   BrowseRoute: typeof BrowseRoute
   ContactRoute: typeof ContactRoute
   HowItWorksRoute: typeof HowItWorksRoute
   PricingRoute: typeof PricingRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdIdRoute: typeof AdIdRoute
+  AdminApprovalsRoute: typeof AdminApprovalsRoute
+  AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminStatusRoute: typeof AdminStatusRoute
+  AdvertiserActivityRoute: typeof AdvertiserActivityRoute
+  AdvertiserTrendsRoute: typeof AdvertiserTrendsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -282,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/become-advertiser': {
+      id: '/become-advertiser'
+      path: '/become-advertiser'
+      fullPath: '/become-advertiser'
+      preLoaderRoute: typeof BecomeAdvertiserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -310,12 +420,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/advertiser/trends': {
+      id: '/advertiser/trends'
+      path: '/advertiser/trends'
+      fullPath: '/advertiser/trends'
+      preLoaderRoute: typeof AdvertiserTrendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advertiser/activity': {
+      id: '/advertiser/activity'
+      path: '/advertiser/activity'
+      fullPath: '/advertiser/activity'
+      preLoaderRoute: typeof AdvertiserActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/status': {
+      id: '/admin/status'
+      path: '/admin/status'
+      fullPath: '/admin/status'
+      preLoaderRoute: typeof AdminStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/admin/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/approvals': {
+      id: '/admin/approvals'
+      path: '/admin/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AdminApprovalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ad/$id': {
       id: '/ad/$id'
       path: '/ad/$id'
       fullPath: '/ad/$id'
       preLoaderRoute: typeof AdIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/me': {
+      id: '/_authenticated/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof AuthenticatedMeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
@@ -371,6 +530,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedDashboardNewAdRoute: typeof AuthenticatedDashboardNewAdRoute
   AuthenticatedDashboardPaymentResultRoute: typeof AuthenticatedDashboardPaymentResultRoute
   AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
@@ -381,6 +541,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedDashboardNewAdRoute: AuthenticatedDashboardNewAdRoute,
   AuthenticatedDashboardPaymentResultRoute:
     AuthenticatedDashboardPaymentResultRoute,
@@ -398,12 +559,19 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  BecomeAdvertiserRoute: BecomeAdvertiserRoute,
   BrowseRoute: BrowseRoute,
   ContactRoute: ContactRoute,
   HowItWorksRoute: HowItWorksRoute,
   PricingRoute: PricingRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdIdRoute: AdIdRoute,
+  AdminApprovalsRoute: AdminApprovalsRoute,
+  AdminFinanceRoute: AdminFinanceRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminStatusRoute: AdminStatusRoute,
+  AdvertiserActivityRoute: AdvertiserActivityRoute,
+  AdvertiserTrendsRoute: AdvertiserTrendsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
